@@ -70,3 +70,6 @@ group :test do
   gem 'rspec-rails'
   gem 'selenium-webdriver'
 end
+
+gem 'graphiql-rails', group: :development
+gem 'graphql'
