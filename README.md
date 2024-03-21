@@ -1,24 +1,20 @@
-# README
+# Hotel data merge - solution
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## Introduction
 
-Things you may want to cover:
+This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650).
 
-* Ruby version
+## Setup
 
-* System dependencies
+### Programming language
 
-* Configuration
+- Ruby on Rails
+  reasoning: to match the stack used in Ascenda and also the fastest to setup
 
-* Database creation
+### Approaches
 
-* Database initialization
+#### V0 (Server setup and initial data cleanup)
 
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+- Setup class diagram based on the API response example
+  TODO: upload the diagram here
+- Setup GraphQL: felt that it will make the API more flexible in the future
