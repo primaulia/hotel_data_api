@@ -72,6 +72,7 @@ group :test do
   gem 'webmock'
 end
 
+gem 'geocoder'
 gem 'graphiql-rails', group: :development
 gem 'graphql'
 gem 'rest-client'

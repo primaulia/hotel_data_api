@@ -1,8 +1,23 @@
-class PatagoniaClient
-  BASE_URL = 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/patagonia'.freeze
+class PatagoniaClient < ApiClient
+  def initialize
+    super
+    @endpoint = 'patagonia'
+  end
 
-  def self.call
-    response = RestClient.get BASE_URL, { accept: :json }
-    JSON.parse(response.body)
+  private
+
+  def clean_data
+    @raw_data.map do |hotel|
+      {
+        id: hotel['id'],
+        destination_id: hotel['destination'],
+        name: hotel['name'],
+        lat: hotel['lat'],
+        lng: hotel['lng'],
+        address: hotel['address'],
+        description: hotel['info'],
+        booking_conditions: hotel['booking_conditions']
+      }
+    end
   end
 end
