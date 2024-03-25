@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe HotelProcurer do
-  before(:all) do
+  before(:each) do
     mock_response_path = Rails.root.join('spec/fixtures/api_response.json')
     mock_response_body = File.read(mock_response_path)
 
@@ -24,8 +24,32 @@ RSpec.describe HotelProcurer do
     end
   end
 
+  describe '__create_destinations' do
+    it 'creates a destination based on the given destination_id' do
+      hotel = described_class.new.send(:retrieve_data).first
+      expect { described_class.new.send(:create_destination, hotel) }.to change(Destination, :count).by(1)
+    end
+
+    # TODO
+    xit 'doesnt create a new one if the destination already exists' do
+    end
+  end
+
+  describe '__create_hotel' do
+    it 'creates a destination based on the given destination_id' do
+      hotel = described_class.new.send(:retrieve_data).first
+      expect { described_class.new.send(:create_hotel, hotel) }.to change(Hotel, :count).by(1)
+    end
+
+    # TODO
+    xit 'doesnt create a new one if the destination already exists' do
+    end
+  end
+
   describe '#call' do
     it 'creates the appropriate model according to the returned data' do
+      # Procure the data and save it to the db
+      expect { described_class.new.call }.to change(Destination, :count).by(2)
     end
   end
 
