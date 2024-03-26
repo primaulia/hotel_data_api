@@ -27,7 +27,7 @@ class HotelProcurer
     destination_id = hotel_data[:destination_id]
     create_destination(destination_id)
     hotel = create_hotel(hotel_data)
-    manage_amenities(hotel_data[:amenities], hotel)
+    setup_amenities(hotel_data[:amenities], hotel)
   end
 
   def create_destination(id)
@@ -41,18 +41,21 @@ class HotelProcurer
     hotel
   end
 
-  def manage_amenities(amenities, hotel)
-    create_amenities(amenities, hotel)
-    clean_amenities(amenities, hotel)
-  end
-
-  def create_amenities(amenities, hotel)
-    amenities.each do |type, array|
+  def setup_amenities(given_amenities, hotel)
+    # create new amenities
+    given_amenities.each do |type, array|
       array.each do |name|
         Amenity.find_or_create_by(amenity_type: type, hotel_id: hotel.id, name:)
       end
     end
+
+    # remove amenities that's not on the data
+    hotel.amenities.each do |amenity|
+      remove_amenity(amenity) unless given_amenities[amenity.amenity_type]&.include?(amenity.name)
+    end
   end
 
-  def clean_amenities(amenities, hotel); end
+  def remove_amenity(amenity)
+    Amenity.find(amenity.id).destroy
+  end
 end

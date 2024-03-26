@@ -58,7 +58,7 @@ RSpec.describe HotelProcurer do
     end
   end
 
-  describe '__create_amenities' do
+  describe '__setup_amenities' do
     let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
     let(:destination) { create(:destination) }
     let(:hotel) { create(:hotel, destination:) }
@@ -66,27 +66,51 @@ RSpec.describe HotelProcurer do
 
     it 'creates an amenities record based for the given hotel' do
       expect do
-        described_class.new.send(:create_amenities, data[:amenities],
+        described_class.new.send(:setup_amenities, data[:amenities],
                                  hotel)
-      end.to change(Amenity, :count).by(data[:amenities].values.map(&:size).sum)
+      end.to change(Amenity, :count).by(data[:amenities].values.map(&:count).sum - 1)
       expect(Amenity.first.hotel_id).to eq(hotel.id)
     end
 
     it 'doesn\'t recreate a new amenities record if it already exist' do
-      amenity
       given_amenities = {
-        "general": [
+        'general' => [
           'aircon',
           'business center'
         ]
       }
       expect do
-        described_class.new.send(:create_amenities, given_amenities,
+        described_class.new.send(:setup_amenities, given_amenities,
                                  hotel.reload)
       end.to change(Amenity, :count).by(1)
       expect(Amenity.first.hotel_id).to eq(hotel.id)
       expect(hotel.reload.amenities.count).to eq(2)
       expect(hotel.amenities.pluck(:name)).to match_array(['aircon', 'business center'])
+    end
+
+    it 'cleans all the unused amenities' do
+      given_amenities = {
+        'general' => [
+          'xxx'
+        ]
+      }
+
+      described_class.new.send(:setup_amenities, given_amenities,
+                               hotel.reload)
+      expect(hotel.amenities.count).to eq(1)
+    end
+  end
+
+  describe 'remove_amenity' do
+    let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
+    let(:destination) { create(:destination) }
+    let(:hotel) { create(:hotel, destination:) }
+    let!(:amenity) { create(:amenity, hotel:) }
+
+    it 'if given the id' do
+      expect do
+        described_class.new.send(:remove_amenity, amenity)
+      end.to change(Amenity, :count).by(-1)
     end
   end
 
