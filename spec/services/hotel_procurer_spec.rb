@@ -117,10 +117,10 @@ RSpec.describe HotelProcurer do
   describe '#call' do
     it 'creates the appropriate model according to the returned data' do
       # Procure the data and save it to the db
-      expect { described_class.new.call }.to change { [Destination.count, Hotel.count] }.by([2, 3])
+      expect { described_class.new.call }.to change { [Destination.count, Hotel.count, Amenity.count] }.by([2, 3, 31])
 
       # if it's called again, nothing will change
-      expect { described_class.new.call }.not_to change { [Destination.count, Hotel.count] }
+      expect { described_class.new.call }.not_to change { [Destination.count, Hotel.count, Amenity.count] }
     end
   end
 

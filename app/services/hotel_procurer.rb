@@ -28,6 +28,7 @@ class HotelProcurer
     create_destination(destination_id)
     hotel = create_hotel(hotel_data)
     setup_amenities(hotel_data[:amenities], hotel)
+    setup_images(hotel_data[:images], hotel)
   end
 
   def create_destination(id)
