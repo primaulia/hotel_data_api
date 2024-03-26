@@ -24,29 +24,29 @@
       "rooms": [
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i93_m.jpg",
-          "caption": "Double room"
+          "description": "Double room"
         },
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i94_m.jpg",
-          "caption": "Bathroom"
+          "description": "Bathroom"
         }
       ],
       "site": [
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i1_m.jpg",
-          "caption": "Restaurant"
+          "description": "Restaurant"
         },
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i2_m.jpg",
-          "caption": "Hotel Exterior"
+          "description": "Hotel Exterior"
         },
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i5_m.jpg",
-          "caption": "Entrance"
+          "description": "Entrance"
         },
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i24_m.jpg",
-          "caption": "Bar"
+          "description": "Bar"
         }
       ]
     },
@@ -70,17 +70,17 @@
       "rooms": [
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/YwAr/i1_m.jpg",
-          "caption": "Suite"
+          "description": "Suite"
         },
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/YwAr/i15_m.jpg",
-          "caption": "Double room"
+          "description": "Double room"
         }
       ],
       "site": [
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/YwAr/i55_m.jpg",
-          "caption": "Bar"
+          "description": "Bar"
         }
       ]
     },
@@ -116,17 +116,17 @@
       "rooms": [
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/2.jpg",
-          "caption": "Double room"
+          "description": "Double room"
         },
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/3.jpg",
-          "caption": "Double room"
+          "description": "Double room"
         }
       ],
       "site": [
         {
           "link": "https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/1.jpg",
-          "caption": "Front"
+          "description": "Front"
         }
       ]
     },

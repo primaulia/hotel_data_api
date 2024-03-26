@@ -56,7 +56,28 @@ class HotelProcurer
     end
   end
 
+  def setup_images(given_images, hotel)
+    given_images.each do |type, array|
+      array.each do |image_hash|
+        Image.find_or_create_by(image_type: type, hotel_id: hotel.id, link: image_hash['link'],
+                                description: image_hash['description'])
+      end
+    end
+
+    # remove images that's not on the data
+    hotel.images.each do |image|
+      # debugger
+      remove_image(image) unless given_images[image.image_type]&.any? do |data|
+                                   data['link'] == image.link && data['description'] && image.description
+                                 end
+    end
+  end
+
   def remove_amenity(amenity)
-    Amenity.find(amenity.id).destroy
+    Amenity.find_by(id: amenity.id).destroy
+  end
+
+  def remove_image(image)
+    Image.find_by(id: image.id).destroy
   end
 end

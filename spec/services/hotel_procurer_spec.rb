@@ -64,7 +64,7 @@ RSpec.describe HotelProcurer do
     let(:hotel) { create(:hotel, destination:) }
     let!(:amenity) { create(:amenity, hotel:) }
 
-    it 'creates an amenities record based for the given hotel' do
+    it 'creates amenities record based for the given hotel' do
       expect do
         described_class.new.send(:setup_amenities, data[:amenities],
                                  hotel)
@@ -111,6 +111,21 @@ RSpec.describe HotelProcurer do
       expect do
         described_class.new.send(:remove_amenity, amenity)
       end.to change(Amenity, :count).by(-1)
+    end
+  end
+
+  describe '__setup_images' do
+    let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
+    let(:destination) { create(:destination) }
+    let(:hotel) { create(:hotel, destination:) }
+    let!(:image) { create(:image, hotel:) }
+
+    it 'creates images record based for the given hotel' do
+      expect do
+        described_class.new.send(:setup_images, data[:images],
+                                 hotel)
+      end.to change(Image, :count).by(data[:images].values.map(&:count).sum - 1)
+      expect(Image.first.hotel_id).to eq(hotel.id)
     end
   end
 
