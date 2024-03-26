@@ -10,10 +10,10 @@ RSpec.describe HotelProcurer do
       .to_return(status: 200, body: mock_response_body, headers: {})
   end
 
-  describe '__retrieve_data' do
+  describe '__retrieved_data' do
     it 'returns a list of cleaned hotels' do
       # Procure the data
-      hotels = described_class.new.send(:retrieve_data)
+      hotels = described_class.new.send(:retrieved_data)
 
       # Assert the response
       expect(hotels.size).to eq(3)
@@ -25,9 +25,11 @@ RSpec.describe HotelProcurer do
   end
 
   describe '__create_destinations' do
+    let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
     it 'creates a destination based on the given destination_id' do
-      hotel = described_class.new.send(:retrieve_data).first
-      expect { described_class.new.send(:create_destination, hotel) }.to change(Destination, :count).by(1)
+      id = data[:destination_id]
+      expect { described_class.new.send(:create_destination, id) }.to change(Destination, :count).by(1)
+      expect(Destination.first.id).to eq(id)
     end
 
     # TODO
@@ -36,20 +38,21 @@ RSpec.describe HotelProcurer do
   end
 
   describe '__create_hotel' do
-    it 'creates a destination based on the given destination_id' do
-      hotel = described_class.new.send(:retrieve_data).first
-      expect { described_class.new.send(:create_hotel, hotel) }.to change(Hotel, :count).by(1)
-    end
-
-    # TODO
-    xit 'doesnt create a new one if the destination already exists' do
+    let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
+    it 'creates a hotel based on the given data' do
+      described_class.new.send(:create_destination, data[:destination_id])
+      expect { described_class.new.send(:create_hotel, data) }.to change(Hotel, :count).by(1)
+      expect(Hotel.first.slug).to eq(data[:id])
     end
   end
 
   describe '#call' do
     it 'creates the appropriate model according to the returned data' do
       # Procure the data and save it to the db
-      expect { described_class.new.call }.to change(Destination, :count).by(2)
+      expect { described_class.new.call }.to change { [Destination.count, Hotel.count] }.by([2, 3])
+
+      # if it's called again, nothing will change
+      expect { described_class.new.call }.not_to change { [Destination.count, Hotel.count] }
     end
   end
 
