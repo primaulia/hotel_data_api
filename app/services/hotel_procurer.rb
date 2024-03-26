@@ -26,7 +26,8 @@ class HotelProcurer
   def setup_models(hotel_data)
     destination_id = hotel_data[:destination_id]
     create_destination(destination_id)
-    create_hotel(hotel_data)
+    hotel = create_hotel(hotel_data)
+    manage_amenities(hotel_data[:amenities], hotel)
   end
 
   def create_destination(id)
@@ -39,4 +40,19 @@ class HotelProcurer
                              :booking_conditions))
     hotel
   end
+
+  def manage_amenities(amenities, hotel)
+    create_amenities(amenities, hotel)
+    clean_amenities(amenities, hotel)
+  end
+
+  def create_amenities(amenities, hotel)
+    amenities.each do |type, array|
+      array.each do |name|
+        Amenity.find_or_create_by(amenity_type: type, hotel_id: hotel.id, name:)
+      end
+    end
+  end
+
+  def clean_amenities(amenities, hotel); end
 end

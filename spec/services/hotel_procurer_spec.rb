@@ -43,7 +43,6 @@ RSpec.describe HotelProcurer do
   describe '__create_hotel' do
     let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
     let(:destination) { create(:destination) }
-    let(:destination2) { create(:destination) }
     let(:hotel) { create(:hotel, destination:) }
     it 'creates a hotel based on the given data' do
       described_class.new.send(:create_destination, data[:destination_id])
@@ -56,6 +55,38 @@ RSpec.describe HotelProcurer do
       hotel.update_columns(slug: data[:id])
       expect { described_class.new.send(:create_hotel, data) }.not_to change(Hotel, :count)
       expect(Hotel.first.destination_id).to eq(destination.id)
+    end
+  end
+
+  describe '__create_amenities' do
+    let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
+    let(:destination) { create(:destination) }
+    let(:hotel) { create(:hotel, destination:) }
+    let!(:amenity) { create(:amenity, hotel:) }
+
+    it 'creates an amenities record based for the given hotel' do
+      expect do
+        described_class.new.send(:create_amenities, data[:amenities],
+                                 hotel)
+      end.to change(Amenity, :count).by(data[:amenities].values.map(&:size).sum)
+      expect(Amenity.first.hotel_id).to eq(hotel.id)
+    end
+
+    it 'doesn\'t recreate a new amenities record if it already exist' do
+      amenity
+      given_amenities = {
+        "general": [
+          'aircon',
+          'business center'
+        ]
+      }
+      expect do
+        described_class.new.send(:create_amenities, given_amenities,
+                                 hotel.reload)
+      end.to change(Amenity, :count).by(1)
+      expect(Amenity.first.hotel_id).to eq(hotel.id)
+      expect(hotel.reload.amenities.count).to eq(2)
+      expect(hotel.amenities.pluck(:name)).to match_array(['aircon', 'business center'])
     end
   end
 
