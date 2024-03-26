@@ -26,23 +26,36 @@ RSpec.describe HotelProcurer do
 
   describe '__create_destinations' do
     let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
+    let(:destination) { create(:destination) }
     it 'creates a destination based on the given destination_id' do
       id = data[:destination_id]
       expect { described_class.new.send(:create_destination, id) }.to change(Destination, :count).by(1)
       expect(Destination.first.id).to eq(id)
     end
 
-    # TODO
-    xit 'doesnt create a new one if the destination already exists' do
+    it 'doesnt create a new one if the destination already exists' do
+      id = data[:destination_id]
+      destination.update_columns(id:)
+      expect { described_class.new.send(:create_destination, id) }.not_to change(Destination, :count)
     end
   end
 
   describe '__create_hotel' do
     let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
+    let(:destination) { create(:destination) }
+    let(:destination2) { create(:destination) }
+    let(:hotel) { create(:hotel, destination:) }
     it 'creates a hotel based on the given data' do
       described_class.new.send(:create_destination, data[:destination_id])
       expect { described_class.new.send(:create_hotel, data) }.to change(Hotel, :count).by(1)
       expect(Hotel.first.slug).to eq(data[:id])
+    end
+
+    it 'doesnt create a new one if the hotel already exists' do
+      data[:destination_id] = destination.id
+      hotel.update_columns(slug: data[:id])
+      expect { described_class.new.send(:create_hotel, data) }.not_to change(Hotel, :count)
+      expect(Hotel.first.destination_id).to eq(destination.id)
     end
   end
 
