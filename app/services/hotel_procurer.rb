@@ -21,6 +21,8 @@ class HotelProcurer
   def retrieved_data
     response = RestClient.get @base_url, { accept: :json }
     JSON.parse(response.body)
+  rescue StandardError => e
+    errors << { hotel_data:, error: e.message } # Log error details
   end
 
   def setup_models(hotel_data)
