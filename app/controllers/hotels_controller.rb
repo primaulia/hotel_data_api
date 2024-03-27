@@ -1,5 +1,5 @@
 class HotelsController < ApplicationController
   def index
-    raise
+    @hotels = Hotel.order(created_at: :desc)
   end
 end
