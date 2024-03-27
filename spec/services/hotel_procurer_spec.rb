@@ -39,6 +39,10 @@ RSpec.describe HotelProcurer do
         destination.update_columns(id:)
         expect { described_class.new.send(:create_destination, id) }.not_to change(Destination, :count)
       end
+
+      it 'raise an error if the destination cannot be created' do
+        expect { described_class.new.send(:create_destination, nil) }.to raise_error(StandardError)
+      end
     end
 
     describe '__create_hotel' do
@@ -56,6 +60,11 @@ RSpec.describe HotelProcurer do
         hotel.update_columns(slug: data[:id])
         expect { described_class.new.send(:create_hotel, data) }.not_to change(Hotel, :count)
         expect(Hotel.first.destination_id).to eq(destination.id)
+      end
+
+      it 'raise an error if the hotel cannot be created' do
+        data[:destination_id] = nil
+        expect { described_class.new.send(:create_hotel, data) }.to raise_error(StandardError)
       end
     end
 
@@ -99,6 +108,11 @@ RSpec.describe HotelProcurer do
         described_class.new.send(:setup_amenities, given_amenities,
                                  hotel.reload)
         expect(hotel.amenities.count).to eq(1)
+      end
+
+      it 'raise an error if the amenity cannot be created' do
+        hotel = nil
+        expect { described_class.new.send(:setup_amenities, hotel) }.to raise_error(StandardError)
       end
     end
 
@@ -152,6 +166,11 @@ RSpec.describe HotelProcurer do
         described_class.new.send(:setup_images, given_images,
                                  hotel.reload)
         expect(hotel.images.count).to eq(1)
+      end
+
+      it 'raise an error if the image cannot be created' do
+        hotel = nil
+        expect { described_class.new.send(:setup_images, hotel) }.to raise_error(StandardError)
       end
     end
 

@@ -34,6 +34,8 @@ class HotelProcurer
   end
 
   def create_destination(id)
+    raise StandardError if id.nil?
+
     Destination.find_or_create_by!(id:)
   end
 
