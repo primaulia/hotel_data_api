@@ -101,19 +101,6 @@ RSpec.describe HotelProcurer do
     end
   end
 
-  describe 'remove_amenity' do
-    let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
-    let(:destination) { create(:destination) }
-    let(:hotel) { create(:hotel, destination:) }
-    let!(:amenity) { create(:amenity, hotel:) }
-
-    it 'if given the id' do
-      expect do
-        described_class.new.send(:remove_amenity, amenity)
-      end.to change(Amenity, :count).by(-1)
-    end
-  end
-
   describe '__setup_images' do
     let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
     let(:destination) { create(:destination) }
@@ -127,15 +114,55 @@ RSpec.describe HotelProcurer do
       end.to change(Image, :count).by(data[:images].values.map(&:count).sum - 1)
       expect(Image.first.hotel_id).to eq(hotel.id)
     end
+
+    it 'doesn\'t recreate image if it already exists' do
+      given_images = {
+        'rooms' => [
+          {
+            'link' => 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i93_m.jpg',
+            'description' => 'Double room'
+          },
+          {
+            'link' => 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i94_m.jpg',
+            'description' => 'Bathroom'
+          }
+        ]
+      }
+
+      expect do
+        described_class.new.send(:setup_images, given_images,
+                                 hotel)
+      end.to change(Image, :count).by(1)
+      expect(Image.first.hotel_id).to eq(hotel.id)
+      expect(hotel.reload.images.count).to eq(2)
+      expect(hotel.images.pluck(:link)).to match_array(['https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i93_m.jpg', 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i94_m.jpg'])
+    end
+
+    it 'cleans all the unused images' do
+      given_images = {
+        'rooms' => [
+          {
+            'link' => 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/xxx_m.jpg',
+            'description' => 'Single room'
+          }
+        ]
+      }
+
+      described_class.new.send(:setup_images, given_images,
+                               hotel.reload)
+      expect(hotel.images.count).to eq(1)
+    end
   end
 
   describe '#call' do
     it 'creates the appropriate model according to the returned data' do
       # Procure the data and save it to the db
-      expect { described_class.new.call }.to change { [Destination.count, Hotel.count, Amenity.count] }.by([2, 3, 31])
+      expect { described_class.new.call }.to change {
+                                               [Destination.count, Hotel.count, Amenity.count, Image.count]
+                                             }.by([2, 3, 31, 12]) # based on the mock api response
 
       # if it's called again, nothing will change
-      expect { described_class.new.call }.not_to change { [Destination.count, Hotel.count, Amenity.count] }
+      expect { described_class.new.call }.not_to change { [Destination.count, Hotel.count, Amenity.count, Image.count] }
     end
   end
 

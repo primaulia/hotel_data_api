@@ -32,7 +32,7 @@ class HotelProcurer
   end
 
   def create_destination(id)
-    Destination.find_or_create_by(id:)
+    Destination.find_or_create_by!(id:)
   end
 
   def create_hotel(data)
@@ -46,38 +46,30 @@ class HotelProcurer
     # create new amenities
     given_amenities.each do |type, array|
       array.each do |name|
-        Amenity.find_or_create_by(amenity_type: type, hotel_id: hotel.id, name:)
+        Amenity.find_or_create_by!(amenity_type: type, hotel_id: hotel.id, name:)
       end
     end
 
     # remove amenities that's not on the data
     hotel.amenities.each do |amenity|
-      remove_amenity(amenity) unless given_amenities[amenity.amenity_type]&.include?(amenity.name)
+      amenity.destroy! unless given_amenities[amenity.amenity_type]&.include?(amenity.name)
     end
   end
 
   def setup_images(given_images, hotel)
     given_images.each do |type, array|
       array.each do |image_hash|
-        Image.find_or_create_by(image_type: type, hotel_id: hotel.id, link: image_hash['link'],
-                                description: image_hash['description'])
+        Image.find_or_create_by!(image_type: type, hotel_id:
+         hotel.id, link: image_hash['link'],
+                                 description: image_hash['description'])
       end
     end
 
     # remove images that's not on the data
     hotel.images.each do |image|
-      # debugger
-      remove_image(image) unless given_images[image.image_type]&.any? do |data|
-                                   data['link'] == image.link && data['description'] && image.description
-                                 end
+      image.destroy! unless given_images[image.image_type]&.any? do |data|
+                              data['link'] == image.link && data['description'] && image.description
+                            end
     end
-  end
-
-  def remove_amenity(amenity)
-    Amenity.find_by(id: amenity.id).destroy
-  end
-
-  def remove_image(image)
-    Image.find_by(id: image.id).destroy
   end
 end
