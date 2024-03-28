@@ -102,10 +102,6 @@ GEM
     geocoder (1.8.2)
     globalid (1.2.1)
       activesupport (>= 6.1)
-    graphiql-rails (1.9.0)
-      railties
-      sprockets-rails
-    graphql (2.2.8)
     hashdiff (1.0.1)
     http-accept (1.7.0)
     http-cookie (1.0.5)
@@ -276,8 +272,6 @@ DEPENDENCIES
   debug
   factory_bot_rails
   geocoder
-  graphiql-rails
-  graphql
   importmap-rails
   jbuilder
   puma (~> 5.0)

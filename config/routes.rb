@@ -1,11 +1,7 @@
 Rails.application.routes.draw do
   root 'hotels#index'
-  resources :hotels, only: [:index]
 
-  mount GraphiQL::Rails::Engine, at: '/graphiql', graphql_path: '/graphql' if Rails.env.development?
-  post '/graphql', to: 'graphql#execute'
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-
-  # Defines the root path route ("/")
-  # root "articles#index"
+  scope '/api', defaults: { format: :json } do
+    resources :hotels, only: [:index]
+  end
 end

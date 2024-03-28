@@ -75,6 +75,4 @@ group :test do
 end
 
 gem 'geocoder'
-gem 'graphiql-rails', group: :development
-gem 'graphql'
 gem 'rest-client'
