@@ -2,6 +2,7 @@ class Hotel < ApplicationRecord
   belongs_to :destination
   has_many :amenities, dependent: :destroy
   has_many :images, dependent: :destroy
+  has_many :booking_conditions, dependent: :destroy
 
   validates :name, :slug, :address, presence: true
   validates :slug, uniqueness: true

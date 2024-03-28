@@ -11,5 +11,6 @@ RSpec.describe Hotel, type: :model do
     it { should belong_to(:destination) }
     it { should have_many(:amenities) }
     it { should have_many(:images) }
+    it { should have_many(:booking_conditions) }
   end
 end
