@@ -20,8 +20,9 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 - Please see [this repo](https://github.com/primaulia/hotel-cleanup-api) for the procuring process
 
 - Setup class diagram based on the API response example
-<img width="471" alt="Screenshot 2024-03-21 at 11 12 08 PM" src="https://github.com/primaulia/hotel_data_api/assets/1294303/2ba856a7-b432-46b1-a800-757022179742">
+![Screenshot 2024-03-28 at 9 49 13 AM](https://github.com/primaulia/hotel_data_api/assets/1294303/06a5d16d-ad1a-4e72-985f-a6ce3adeea89)
 
 - Setup GraphQL: Decided that it will make the API more flexible in the future
 
 - 
+
