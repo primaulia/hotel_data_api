@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :hotel do
     destination
-    slug { 'xxx' }
-    name { 'Hotel XXX' }
-    address { '1 xxx road' }
+    sequence(:slug) { |n| "xxx#{n}" }
+    sequence(:name) { |n| "Hotel XXX#{n}" }
+    sequence(:address) { |n| "#{n} xxx road" }
     city { 'Singapore' }
     description { 'This is an xxx hotel' }
     booking_conditions { [] }
