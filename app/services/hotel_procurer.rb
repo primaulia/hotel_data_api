@@ -64,7 +64,7 @@ class HotelProcurer
     given_images.each do |type, array|
       array.each do |image_hash|
         Image.find_or_create_by!(image_type: type, hotel_id:
-         hotel.id, link: image_hash['link'], # TODO
+         hotel.id, link: image_hash['url'], # TODO
                                  description: image_hash['description'])
       end
     end
@@ -73,7 +73,7 @@ class HotelProcurer
     hotel.images.each do |image|
       # TODO
       image.destroy! unless given_images[image.image_type]&.any? do |data|
-                              data['link'] == image.link && data['description'] && image.description
+                              data['url'] == image.link && data['description'] && image.description
                             end
     end
   end

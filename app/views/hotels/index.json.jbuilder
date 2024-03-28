@@ -12,5 +12,5 @@ json.array! @hotels do |hotel|
   json.amenities hotel.amenities_list
   json.images hotel.images_list
   json.description hotel.description
-  json.booking_conditions JSON.parse(hotel.booking_conditions)
+  json.booking_conditions hotel.booking_conditions.pluck(:condition)
 end
