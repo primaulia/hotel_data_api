@@ -52,7 +52,11 @@ RSpec.describe HotelProcurer do
       it 'creates a hotel based on the given data' do
         described_class.new.send(:create_destination, data[:destination_id])
         expect { described_class.new.send(:create_hotel, data) }.to change(Hotel, :count).by(1)
-        expect(Hotel.first.slug).to eq(data[:id])
+
+        created_hotel = Hotel.first
+        expect(created_hotel.slug).to eq(data[:id])
+        expect(created_hotel.name).to eq(data[:name])
+        expect(created_hotel.address).to eq(data[:address])
       end
 
       it 'doesnt create a new one if the hotel already exists' do
@@ -174,16 +178,61 @@ RSpec.describe HotelProcurer do
       end
     end
 
+    describe '__setup_booking_conditions' do
+      let(:data) { described_class.new.send(:retrieved_data).last.symbolize_keys }
+      let(:destination) { create(:destination) }
+      let(:hotel) { create(:hotel, destination:) }
+      let!(:booking_condition) { create(:booking_condition, hotel:) }
+
+      it 'creates a booking condition record based for the given hotel' do
+        expect do
+          described_class.new.send(:setup_booking_conditions, data[:booking_conditions],
+                                   hotel)
+        end.to change(BookingCondition, :count).by(data[:booking_conditions].size - 1)
+        expect(BookingCondition.first.hotel_id).to eq(hotel.id)
+      end
+
+      it 'doesn\'t recreate booking condition if it already exists' do
+        given_conditions = [
+          'WiFi is available in all areas and is free of charge.',
+          'Random conditions'
+        ]
+
+        expect do
+          described_class.new.send(:setup_booking_conditions, given_conditions,
+                                   hotel)
+        end.to change(BookingCondition, :count).by(1)
+        expect(BookingCondition.first.hotel_id).to eq(hotel.id)
+        expect(hotel.reload.booking_conditions.count).to eq(2)
+        expect(hotel.booking_conditions.first.condition).to eq('WiFi is available in all areas and is free of charge.')
+      end
+
+      it 'cleans all the unused images' do
+        given_conditions = ['Free private parking is possible on site (reservation is not needed).']
+
+        described_class.new.send(:setup_booking_conditions, given_conditions,
+                                 hotel.reload)
+        expect(hotel.booking_conditions.count).to eq(1)
+      end
+
+      it 'raise an error if the booking condition cannot be created' do
+        hotel = nil
+        expect { described_class.new.send(:setup_images, hotel) }.to raise_error(StandardError)
+      end
+    end
+
     describe '#call' do
       it 'creates the appropriate model according to the api response' do
         # Procure the data and save it to the db
         expect { described_class.new.call }.to change {
-                                                 [Destination.count, Hotel.count, Amenity.count, Image.count]
-                                               }.by([2, 3, 31, 12]) # based on the mock api response
+                                                 [Destination.count, Hotel.count, Amenity.count, Image.count,
+                                                  BookingCondition.count]
+                                               }.by([2, 3, 31, 12, 11]) # based on the mock api response
 
         # if it's called again, nothing will change
         expect { described_class.new.call }.not_to change {
-                                                     [Destination.count, Hotel.count, Amenity.count, Image.count]
+                                                     [Destination.count, Hotel.count, Amenity.count, Image.count,
+                                                      BookingCondition.count]
                                                    }
       end
     end

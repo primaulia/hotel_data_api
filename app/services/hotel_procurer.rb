@@ -31,6 +31,7 @@ class HotelProcurer
     hotel = create_hotel(hotel_data)
     setup_amenities(hotel_data[:amenities], hotel)
     setup_images(hotel_data[:images], hotel)
+    setup_booking_conditions(hotel_data[:booking_conditions], hotel)
   end
 
   def create_destination(id)
@@ -41,8 +42,7 @@ class HotelProcurer
 
   def create_hotel(data)
     hotel = Hotel.find_or_initialize_by(slug: data[:id])
-    hotel.update!(data.slice(:destination_id, :name, :address, :city, :country, :lat, :lng, :description,
-                             :booking_conditions))
+    hotel.update!(data.slice(:destination_id, :name, :address, :city, :country, :lat, :lng, :description))
     hotel
   end
 
@@ -64,7 +64,7 @@ class HotelProcurer
     given_images.each do |type, array|
       array.each do |image_hash|
         Image.find_or_create_by!(image_type: type, hotel_id:
-         hotel.id, link: image_hash['url'], # TODO
+         hotel.id, link: image_hash['link'], # TODO
                                  description: image_hash['description'])
       end
     end
@@ -73,8 +73,20 @@ class HotelProcurer
     hotel.images.each do |image|
       # TODO
       image.destroy! unless given_images[image.image_type]&.any? do |data|
-                              data['url'] == image.link && data['description'] && image.description
+                              data['link'] == image.link && data['description'] && image.description
                             end
+    end
+  end
+
+  def setup_booking_conditions(given_conditions, hotel)
+    given_conditions.each do |condition|
+      # create booking conditions
+      BookingCondition.find_or_create_by!(hotel_id: hotel.id, condition:)
+
+      # remove unused conditions
+      hotel.booking_conditions.each do |cond|
+        cond.destroy! unless given_conditions.include?(cond.condition)
+      end
     end
   end
 end

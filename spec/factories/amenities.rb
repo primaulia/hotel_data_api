@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :amenity do
     hotel
-    name { 'aircon' }
+    name { 'fan' }
     amenity_type { 'room' }
   end
 end
