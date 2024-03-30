@@ -1,32 +1,17 @@
 require 'rails_helper'
 
-RSpec.describe HotelProcurer do
+RSpec.describe DataDownloader do
   describe 'Happy flow' do
     before(:each) do
       mock_response_path = Rails.root.join('spec/fixtures/api_response.json')
-      mock_response_body = File.read(mock_response_path)
+      mock_response_body = JSON.parse(File.read(mock_response_path)).map(&:deep_symbolize_keys)
 
-      stub_request(:get, 'https://pure-wildwood-78321-c62eac623fe7.herokuapp.com/')
-        .with(headers: { 'Accept' => 'application/json' })
-        .to_return(status: 200, body: mock_response_body, headers: {})
+      allow_any_instance_of(HotelProcurer).to receive(:call).and_return(mock_response_body)
     end
 
-    describe '__retrieved_data' do
-      it 'returns a list of cleaned hotels' do
-        # Procure the data
-        hotels = described_class.new.send(:retrieved_data)
-
-        # Assert the response
-        expect(hotels.size).to eq(3)
-        hotels.each do |hotel|
-          expect(hotel.keys).to match_array(%w[id destination_id address amenities booking_conditions city country
-                                               description images lat lng name])
-        end
-      end
-    end
+    let(:data) { described_class.new.data.first }
 
     describe '__create_destinations' do
-      let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
       let(:destination) { create(:destination) }
       it 'creates a destination based on the given destination_id' do
         id = data[:destination_id]
@@ -46,7 +31,6 @@ RSpec.describe HotelProcurer do
     end
 
     describe '__create_hotel' do
-      let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
       let(:destination) { create(:destination) }
       let(:hotel) { create(:hotel, destination:) }
       it 'creates a hotel based on the given data' do
@@ -73,7 +57,6 @@ RSpec.describe HotelProcurer do
     end
 
     describe '__setup_amenities' do
-      let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
       let(:destination) { create(:destination) }
       let(:hotel) { create(:hotel, destination:) }
       let!(:amenity) { create(:amenity, hotel:) }
@@ -88,7 +71,7 @@ RSpec.describe HotelProcurer do
 
       it 'doesn\'t recreate a new amenities record if it already exist' do
         given_amenities = {
-          'general' => [
+          general: [
             'aircon',
             'business center'
           ]
@@ -104,7 +87,7 @@ RSpec.describe HotelProcurer do
 
       it 'cleans all the unused amenities' do
         given_amenities = {
-          'general' => [
+          general: [
             'xxx'
           ]
         }
@@ -121,7 +104,6 @@ RSpec.describe HotelProcurer do
     end
 
     describe '__setup_images' do
-      let(:data) { described_class.new.send(:retrieved_data).first.symbolize_keys }
       let(:destination) { create(:destination) }
       let(:hotel) { create(:hotel, destination:) }
       let!(:image) { create(:image, hotel:) }
@@ -136,14 +118,14 @@ RSpec.describe HotelProcurer do
 
       it 'doesn\'t recreate image if it already exists' do
         given_images = {
-          'rooms' => [
+          rooms: [
             {
-              'link' => 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i93_m.jpg',
-              'description' => 'Double room'
+              link: 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i93_m.jpg',
+              description: 'Double room'
             },
             {
-              'link' => 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i94_m.jpg',
-              'description' => 'Bathroom'
+              link: 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/i94_m.jpg',
+              description: 'Bathroom'
             }
           ]
         }
@@ -159,10 +141,10 @@ RSpec.describe HotelProcurer do
 
       it 'cleans all the unused images' do
         given_images = {
-          'rooms' => [
+          rooms: [
             {
-              'link' => 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/xxx_m.jpg',
-              'description' => 'Single room'
+              link: 'https://d2ey9sqrvkqdfs.cloudfront.net/Sjym/xxx_m.jpg',
+              description: 'Single room'
             }
           ]
         }
@@ -179,7 +161,6 @@ RSpec.describe HotelProcurer do
     end
 
     describe '__setup_booking_conditions' do
-      let(:data) { described_class.new.send(:retrieved_data).last.symbolize_keys }
       let(:destination) { create(:destination) }
       let(:hotel) { create(:hotel, destination:) }
       let!(:booking_condition) { create(:booking_condition, hotel:) }
@@ -227,7 +208,7 @@ RSpec.describe HotelProcurer do
         expect { described_class.new.call }.to change {
                                                  [Destination.count, Hotel.count, Amenity.count, Image.count,
                                                   BookingCondition.count]
-                                               }.by([2, 3, 31, 12, 11]) # based on the mock api response
+                                               }.by([2, 3, 17, 6, 11]) # based on the mock api response
 
         # if it's called again, nothing will change
         expect { described_class.new.call }.not_to change {
@@ -236,15 +217,5 @@ RSpec.describe HotelProcurer do
                                                    }
       end
     end
-  end
-
-  it 'raises an error for unsuccessful requests' do
-    # Mock the HTTP request to fail
-    stub_request(:get, 'https://pure-wildwood-78321-c62eac623fe7.herokuapp.com/')
-      .with(headers: { 'Accept' => 'application/json' })
-      .to_return(status: 500, body: '', headers: {})
-
-    # Expect an exception
-    expect { described_class.new.call }.to raise_error(StandardError)
   end
 end

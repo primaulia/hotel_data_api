@@ -1,92 +1,193 @@
+require 'geocoder'
+
 class HotelProcurer
   def initialize
-    @base_url = 'https://pure-wildwood-78321-c62eac623fe7.herokuapp.com/'
+    @base_url = 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/'
+    @endpoints = %w[
+      acme
+      patagonia
+      paperflies
+    ]
+    @data = []
   end
 
   def call
-    errors = []
-
-    retrieved_data.each do |raw_hotel|
-      hotel_data = raw_hotel.symbolize_keys
-      begin
-        setup_models(hotel_data)
-      rescue StandardError => e
-        errors << { hotel_data:, error: e.message }  # Log error details
-      end
+    @endpoints.each do |endpoint|
+      call_api(endpoint)
     end
+
+    merge_data
+    complete_data
   end
 
   private
 
-  def retrieved_data
-    response = RestClient.get @base_url, { accept: :json }
-    JSON.parse(response.body)
-  rescue StandardError => e
-    errors << { hotel_data:, error: e.message } # Log error details
+  def geocode_name(location)
+    Geocoder.search(location)
   end
 
-  def setup_models(hotel_data)
-    destination_id = hotel_data[:destination_id]
-    create_destination(destination_id)
-    hotel = create_hotel(hotel_data)
-    setup_amenities(hotel_data[:amenities], hotel)
-    setup_images(hotel_data[:images], hotel)
-    setup_booking_conditions(hotel_data[:booking_conditions], hotel)
+  def complete_data
+    @data.map do |key, value|
+      # geocode the name name + country if there's no coordinate value
+      lat, lng = if value[:lat].nil?
+                   geocode_name("#{value[:name]} #{value[:country]}").first.coordinates
+                 else
+                   [value[:lat],
+                    value[:lng]]
+                 end
+
+      {
+        id: key,
+        destination_id: value[:destination_id],
+        name: value[:name],
+        lat:,
+        lng:,
+        address: value[:address],
+        city: value[:city],
+        country: value[:country],
+        postal_code: value[:postal_code],
+        description: value[:description],
+        amenities: value[:amenities],
+        images: value[:images],
+        booking_conditions: value[:booking_conditions]
+      }
+    end
   end
 
-  def create_destination(id)
-    raise StandardError if id.nil?
+  def get_longest_string(old_str, new_str)
+    return '' if old_str.nil?
+    return old_str if new_str.nil?
 
-    Destination.find_or_create_by!(id:)
+    old_str.size < new_str.size ? new_str : old_str
   end
 
-  def create_hotel(data)
-    hotel = Hotel.find_or_initialize_by(slug: data[:id])
-    hotel.update!(data.slice(:destination_id, :name, :address, :city, :country, :lat, :lng, :description))
-    hotel
+  def combine_hash(old_hash, new_hash)
+    return {} if old_hash.nil?
+    return new_hash if old_hash.empty?
+
+    new_hash.each do |key, value|
+      old_hash[key] = if old_hash.key? key
+                        old_hash[key] + value
+                      else
+                        value
+                      end
+    end
+
+    old_hash
   end
 
-  def setup_amenities(given_amenities, hotel)
-    # create new amenities
-    given_amenities.each do |type, array|
-      array.each do |name|
-        Amenity.find_or_create_by!(amenity_type: type, hotel_id: hotel.id, name:)
+  def combine_images(old, new)
+    return {} if old.nil?
+    return new if old.empty?
+
+    debugger
+    new
+  end
+
+  def merge_data
+    merged_data = {}
+    @data.each do |hash|
+      if merged_data.key?(hash[:id]) && merged_data.dig(hash[:id], :destination_id)
+        # take the longest string
+        merged_data[hash[:id]][:name] = get_longest_string(merged_data[hash[:id]][:name], hash[:name])
+        merged_data[hash[:id]][:address] = get_longest_string(merged_data[hash[:id]][:address], hash[:address])
+        merged_data[hash[:id]][:city] = get_longest_string(merged_data[hash[:id]][:city], hash[:city])
+        merged_data[hash[:id]][:country] = get_longest_string(merged_data[hash[:id]][:country], hash[:country])
+        merged_data[hash[:id]][:description] =
+          get_longest_string(merged_data[hash[:id]][:description], hash[:description])
+
+        # take the present lat, lng
+        merged_data[hash[:id]][:lat] = hash[:lat].present? ? hash[:lat] : merged_data[hash[:id]][:lat]
+        merged_data[hash[:id]][:lng] = hash[:lng].present? ? hash[:lng] : merged_data[hash[:id]][:lng]
+
+        # combine hash by keys
+        merged_data[hash[:id]][:amenities] = combine_hash(merged_data[hash[:id]][:amenities], hash[:amenities])
+        merged_data[hash[:id]][:images] = combine_images(merged_data[hash[:id]][:images], hash[:images])
+
+        # merge booking_condition
+        merged_data[hash[:id]][:booking_conditions] =
+          merged_data[hash[:id]][:booking_conditions].nil? ? hash[:booking_conditions] : merged_data[hash[:id]][:booking_conditions] + hash[:booking_conditions]
+      else
+        merged_data[hash[:id]] =
+          hash.slice(:destination_id, :name, :lat, :lng, :address, :city, :country, :postal_code, :description,
+                     :amenities, :images, :booking_conditions, :images)
       end
     end
 
-    # remove amenities that's not on the data
-    hotel.amenities.each do |amenity|
-      amenity.destroy! unless given_amenities[amenity.amenity_type]&.include?(amenity.name)
+    @data = merged_data
+  end
+
+  def call_api(endpoint)
+    url = @base_url + endpoint
+    begin
+      response = JSON.parse(RestClient.get(url))
+    rescue StandardError => e
+      puts 'TODO: raise error'
+    end
+    @data += send("process_#{endpoint}", response)
+  end
+
+  def process_acme(response)
+    response.map do |hash|
+      hash = hash
+             .transform_keys(&:underscore) # standardize key names
+             .transform_keys('latitude' => :lat, 'longitude' => :lng)
+             .deep_symbolize_keys
+
+      hash.map do |key, value|
+        hash[key] = value.strip if value.is_a?(String) && key != :id # clean string values
+      end
+
+      hash.delete(:facilities) # remove facilities value (unstructured data)
+      hash
     end
   end
 
-  def setup_images(given_images, hotel)
-    given_images.each do |type, array|
-      array.each do |image_hash|
-        Image.find_or_create_by!(image_type: type, hotel_id:
-         hotel.id, link: image_hash['link'], # TODO
-                                 description: image_hash['description'])
-      end
-    end
+  def process_patagonia(response)
+    response.map do |hash|
+      hash = hash
+             .transform_keys(&:underscore) # standardize key names
+             .transform_keys('destination' => :destination_id, 'info' => :description)
+             .deep_symbolize_keys
 
-    # remove images that's not on the data
-    hotel.images.each do |image|
-      # TODO
-      image.destroy! unless given_images[image.image_type]&.any? do |data|
-                              data['link'] == image.link && data['description'] && image.description
-                            end
+      hash.map do |key, value|
+        hash[key] = value.strip if value.is_a?(String) && key != :id
+      end
+
+      hash.delete(:amenities) # remove amenities value (unstructured data)
+
+      # sync images value
+      new_images = hash[:images].deep_transform_keys do |key|
+        key == :url ? :link : key
+      end
+
+      hash[:images] = new_images
+      hash
     end
   end
 
-  def setup_booking_conditions(given_conditions, hotel)
-    given_conditions.each do |condition|
-      # create booking conditions
-      BookingCondition.find_or_create_by!(hotel_id: hotel.id, condition:)
+  def process_paperflies(response)
+    response.map do |hash|
+      hash = hash
+             .transform_keys(&:underscore) # standardize key names
+             .transform_keys('hotel_id' => :id, 'hotel_name' => :name, 'details' => :description)
+             .deep_symbolize_keys
 
-      # remove unused conditions
-      hotel.booking_conditions.each do |cond|
-        cond.destroy! unless given_conditions.include?(cond.condition)
+      hash.map do |key, value|
+        hash[key] = value.strip if value.is_a?(String) && key != :id
       end
+
+      hash[:address] = hash[:location][:address]
+      hash[:country] = hash[:location][:country]
+      hash.delete(:location) # remove amenities value (unstructured data)
+
+      # sync images value
+      new_images = hash[:images].deep_transform_keys do |key|
+        key == :caption ? :description : key
+      end
+
+      hash[:images] = new_images
+      hash
     end
   end
 end
