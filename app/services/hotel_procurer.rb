@@ -25,25 +25,23 @@ class HotelProcurer
 
   def deduplicate_data
     merged_data = {}
-
     @data.each do |hash|
       key = hash[:id]
       existing_data = merged_data[key]
 
-      if existing_data && existing_data[:destination_id]
-        merge_existing_data(existing_data, hash)
+      if existing_data && existing_data[:destination_id] == hash[:destination_id]
+        merge_existing_data(existing_data, hash, key)
       else
-        merged_data[key] = hash.slice(
-          :destination_id, :name, :lat, :lng, :address, :city, :country,
-          :postal_code, :description, :amenities, :images, :booking_conditions
-        )
+        merged_data[key] =
+          hash.slice(:destination_id, :name, :lat, :lng, :address, :city, :country, :postal_code, :description, :amenities,
+                     :images, :booking_conditions)
       end
     end
 
     @data = merged_data
   end
 
-  def merge_existing_data(existing_data, new_data)
+  def merge_existing_data(existing_data, new_data, _key)
     merge_longest_strings(existing_data, new_data, %i[name address city country description])
     merge_present_values(existing_data, new_data, %i[lat lng])
     if new_data.key?(:amenities)
@@ -53,6 +51,7 @@ class HotelProcurer
     existing_data[:images] = combine_images(existing_data[:images], new_data[:images]) if new_data.key?(:images)
     existing_data[:booking_conditions] ||= []
     existing_data[:booking_conditions] += new_data[:booking_conditions] if new_data.key?(:booking_conditions)
+    existing_data
   end
 
   def merge_longest_strings(existing_data, new_data, fields)
@@ -186,10 +185,15 @@ class HotelProcurer
   end
 
   def combine_images(old, new)
-    return {} if old.nil?
-    return new if old.empty?
+    return new if old.nil?
 
-    new
+    old&.deep_merge!(new) do |_key, v1, v2|
+      if v1.is_a?(Array) && v2.is_a?(Array)
+        (v1 + v2).uniq # if different link, merge the array
+      else
+        v1 || v2 # take whichever is not nil
+      end
+    end
   end
 
   def geocode_name(location)
