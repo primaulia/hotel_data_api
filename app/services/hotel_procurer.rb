@@ -48,7 +48,7 @@ class HotelProcurer
       existing_data[:amenities] =
         combine_hash(existing_data[:amenities], new_data[:amenities])
     end
-    existing_data[:images] = combine_images(existing_data[:images], new_data[:images]) if new_data.key?(:images)
+    existing_data[:images] = combine_hash(existing_data[:images], new_data[:images]) if new_data.key?(:images)
     existing_data[:booking_conditions] ||= []
     existing_data[:booking_conditions] += new_data[:booking_conditions] if new_data.key?(:booking_conditions)
     existing_data
@@ -170,24 +170,9 @@ class HotelProcurer
   end
 
   def combine_hash(old_hash, new_hash)
-    return {} if old_hash.nil?
-    return new_hash if old_hash.empty?
+    return new_hash if old_hash.nil?
 
-    new_hash.each do |key, value|
-      old_hash[key] = if old_hash.key? key
-                        old_hash[key] + value
-                      else
-                        value
-                      end
-    end
-
-    old_hash
-  end
-
-  def combine_images(old, new)
-    return new if old.nil?
-
-    old&.deep_merge!(new) do |_key, v1, v2|
+    old_hash&.deep_merge!(new_hash) do |_key, v1, v2|
       if v1.is_a?(Array) && v2.is_a?(Array)
         (v1 + v2).uniq # if different link, merge the array
       else

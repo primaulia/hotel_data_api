@@ -208,7 +208,7 @@ RSpec.describe DataDownloader do
         expect { described_class.new.call }.to change {
                                                  [Destination.count, Hotel.count, Amenity.count, Image.count,
                                                   BookingCondition.count]
-                                               }.by([2, 3, 17, 6, 11]) # based on the mock api response
+                                               }.by([2, 3, 32, 18, 11]) # based on the mock api response
 
         # if it's called again, nothing will change
         expect { described_class.new.call }.not_to change {
