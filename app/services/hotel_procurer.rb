@@ -3,88 +3,28 @@ require 'geocoder'
 class HotelProcurer
   def initialize
     @base_url = 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/'
+    # when we need to add/remove a supplier, we can adjust this array
     @endpoints = %w[
       acme
       patagonia
       paperflies
+      # fomo
     ]
     @data = []
   end
 
   def call
     @endpoints.each do |endpoint|
-      call_api(endpoint)
+      merge_data(endpoint) # combine all data based on the api responses
     end
 
-    merge_data
-    complete_data
+    deduplicate_data
+    cleanup_data
   end
 
   private
 
-  def geocode_name(location)
-    Geocoder.search(location)
-  end
-
-  def complete_data
-    @data.map do |key, value|
-      # geocode the name name + country if there's no coordinate value
-      lat, lng = if value[:lat].nil?
-                   geocode_name("#{value[:name]} #{value[:country]}").first.coordinates
-                 else
-                   [value[:lat],
-                    value[:lng]]
-                 end
-
-      {
-        id: key,
-        destination_id: value[:destination_id],
-        name: value[:name],
-        lat:,
-        lng:,
-        address: value[:address],
-        city: value[:city],
-        country: value[:country],
-        postal_code: value[:postal_code],
-        description: value[:description],
-        amenities: value[:amenities],
-        images: value[:images],
-        booking_conditions: value[:booking_conditions]
-      }
-    end
-  end
-
-  def get_longest_string(old_str, new_str)
-    return '' if old_str.nil?
-    return old_str if new_str.nil?
-
-    old_str.size < new_str.size ? new_str : old_str
-  end
-
-  def combine_hash(old_hash, new_hash)
-    return {} if old_hash.nil?
-    return new_hash if old_hash.empty?
-
-    new_hash.each do |key, value|
-      old_hash[key] = if old_hash.key? key
-                        old_hash[key] + value
-                      else
-                        value
-                      end
-    end
-
-    old_hash
-  end
-
-  def combine_images(old, new)
-    return {} if old.nil?
-    return new if old.empty?
-
-    debugger
-    new
-  end
-
-  def merge_data
+  def deduplicate_data
     merged_data = {}
     @data.each do |hash|
       if merged_data.key?(hash[:id]) && merged_data.dig(hash[:id], :destination_id)
@@ -117,16 +57,43 @@ class HotelProcurer
     @data = merged_data
   end
 
-  def call_api(endpoint)
+  def merge_data(endpoint)
     url = @base_url + endpoint
-    begin
-      response = JSON.parse(RestClient.get(url))
-    rescue StandardError => e
-      puts 'TODO: raise error'
-    end
+    response = JSON.parse(RestClient.get(url))
     @data += send("process_#{endpoint}", response)
+  rescue StandardError
+    raise StandardError, 'Invalid API endpoints provided!'
   end
 
+  def cleanup_data
+    @data.map do |key, value|
+      # geocode the name name + country if there's no coordinate value
+      lat, lng = if value[:lat].nil?
+                   geocode_name("#{value[:name]} #{value[:country]}").first.coordinates
+                 else
+                   [value[:lat],
+                    value[:lng]]
+                 end
+
+      {
+        id: key,
+        destination_id: value[:destination_id],
+        name: value[:name],
+        lat:,
+        lng:,
+        address: value[:address],
+        city: value[:city],
+        country: value[:country],
+        postal_code: value[:postal_code],
+        description: value[:description],
+        amenities: value[:amenities],
+        images: value[:images],
+        booking_conditions: value[:booking_conditions]
+      }
+    end
+  end
+
+  # different processor strategies according the supplier endpoints
   def process_acme(response)
     response.map do |hash|
       hash = hash
@@ -189,5 +156,39 @@ class HotelProcurer
       hash[:images] = new_images
       hash
     end
+  end
+
+  # util methods
+  def get_longest_string(old_str, new_str)
+    return '' if old_str.nil?
+    return old_str if new_str.nil?
+
+    old_str.size < new_str.size ? new_str : old_str
+  end
+
+  def combine_hash(old_hash, new_hash)
+    return {} if old_hash.nil?
+    return new_hash if old_hash.empty?
+
+    new_hash.each do |key, value|
+      old_hash[key] = if old_hash.key? key
+                        old_hash[key] + value
+                      else
+                        value
+                      end
+    end
+
+    old_hash
+  end
+
+  def combine_images(old, new)
+    return {} if old.nil?
+    return new if old.empty?
+
+    new
+  end
+
+  def geocode_name(location)
+    Geocoder.search(location)
   end
 end

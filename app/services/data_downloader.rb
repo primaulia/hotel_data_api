@@ -6,6 +6,8 @@ class DataDownloader
   end
 
   def call
+    raise StandardError, 'Data procurement has failed' if @data.nil
+
     @data.each do |hotel_data|
       setup_models(hotel_data)
     end
