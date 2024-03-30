@@ -76,14 +76,14 @@ class HotelProcurer
 
   def cleanup_data
     @data.map do |key, value|
-      coordinates = geocode_name("#{value[:name]} #{value[:country]}")&.first&.coordinates
+      coordinates = geocode_name("#{value[:name]} #{value[:country]}")&.first&.coordinates # geocode the coordinates if
 
       {
         id: key,
         destination_id: value[:destination_id],
         name: value[:name],
-        lat: coordinates&.first,
-        lng: coordinates&.second,
+        lat: value[:lat] || coordinates&.first,
+        lng: value[:lng] || coordinates&.second,
         address: value[:address],
         city: value[:city],
         country: value[:country],
