@@ -8,14 +8,13 @@ class HotelProcurer
       acme
       patagonia
       paperflies
-      # fomo
     ]
     @data = []
   end
 
   def call
     @endpoints.each do |endpoint|
-      merge_data(endpoint) # combine all data based on the api responses
+      combine_data(endpoint) # combine all data based on the api responses
     end
 
     deduplicate_data
@@ -26,38 +25,49 @@ class HotelProcurer
 
   def deduplicate_data
     merged_data = {}
+
     @data.each do |hash|
-      if merged_data.key?(hash[:id]) && merged_data.dig(hash[:id], :destination_id)
-        # take the longest string
-        merged_data[hash[:id]][:name] = get_longest_string(merged_data[hash[:id]][:name], hash[:name])
-        merged_data[hash[:id]][:address] = get_longest_string(merged_data[hash[:id]][:address], hash[:address])
-        merged_data[hash[:id]][:city] = get_longest_string(merged_data[hash[:id]][:city], hash[:city])
-        merged_data[hash[:id]][:country] = get_longest_string(merged_data[hash[:id]][:country], hash[:country])
-        merged_data[hash[:id]][:description] =
-          get_longest_string(merged_data[hash[:id]][:description], hash[:description])
+      key = hash[:id]
+      existing_data = merged_data[key]
 
-        # take the present lat, lng
-        merged_data[hash[:id]][:lat] = hash[:lat].present? ? hash[:lat] : merged_data[hash[:id]][:lat]
-        merged_data[hash[:id]][:lng] = hash[:lng].present? ? hash[:lng] : merged_data[hash[:id]][:lng]
-
-        # combine hash by keys
-        merged_data[hash[:id]][:amenities] = combine_hash(merged_data[hash[:id]][:amenities], hash[:amenities])
-        merged_data[hash[:id]][:images] = combine_images(merged_data[hash[:id]][:images], hash[:images])
-
-        # merge booking_condition
-        merged_data[hash[:id]][:booking_conditions] =
-          merged_data[hash[:id]][:booking_conditions].nil? ? hash[:booking_conditions] : merged_data[hash[:id]][:booking_conditions] + hash[:booking_conditions]
+      if existing_data && existing_data[:destination_id]
+        merge_existing_data(existing_data, hash)
       else
-        merged_data[hash[:id]] =
-          hash.slice(:destination_id, :name, :lat, :lng, :address, :city, :country, :postal_code, :description,
-                     :amenities, :images, :booking_conditions, :images)
+        merged_data[key] = hash.slice(
+          :destination_id, :name, :lat, :lng, :address, :city, :country,
+          :postal_code, :description, :amenities, :images, :booking_conditions
+        )
       end
     end
 
     @data = merged_data
   end
 
-  def merge_data(endpoint)
+  def merge_existing_data(existing_data, new_data)
+    merge_longest_strings(existing_data, new_data, %i[name address city country description])
+    merge_present_values(existing_data, new_data, %i[lat lng])
+    if new_data.key?(:amenities)
+      existing_data[:amenities] =
+        combine_hash(existing_data[:amenities], new_data[:amenities])
+    end
+    existing_data[:images] = combine_images(existing_data[:images], new_data[:images]) if new_data.key?(:images)
+    existing_data[:booking_conditions] ||= []
+    existing_data[:booking_conditions] += new_data[:booking_conditions] if new_data.key?(:booking_conditions)
+  end
+
+  def merge_longest_strings(existing_data, new_data, fields)
+    fields.each do |field|
+      existing_data[field] = get_longest_string(existing_data[field], new_data[field])
+    end
+  end
+
+  def merge_present_values(existing_data, new_data, fields)
+    fields.each do |field|
+      existing_data[field] = new_data[field].presence || existing_data[field]
+    end
+  end
+
+  def combine_data(endpoint)
     url = @base_url + endpoint
     response = JSON.parse(RestClient.get(url))
     @data += send("process_#{endpoint}", response)
@@ -67,20 +77,14 @@ class HotelProcurer
 
   def cleanup_data
     @data.map do |key, value|
-      # geocode the name name + country if there's no coordinate value
-      lat, lng = if value[:lat].nil?
-                   geocode_name("#{value[:name]} #{value[:country]}").first.coordinates
-                 else
-                   [value[:lat],
-                    value[:lng]]
-                 end
+      coordinates = geocode_name("#{value[:name]} #{value[:country]}")&.first&.coordinates
 
       {
         id: key,
         destination_id: value[:destination_id],
         name: value[:name],
-        lat:,
-        lng:,
+        lat: coordinates&.first,
+        lng: coordinates&.second,
         address: value[:address],
         city: value[:city],
         country: value[:country],
