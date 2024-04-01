@@ -62,6 +62,17 @@ RSpec.describe HotelProcurer do
       end
     end
 
+    it 'standardized the images keys' do
+      output.each do |hash|
+        images = hash[:images]
+        images.each do |_key, value|
+          value.each do |img_hash|
+            expect(img_hash.keys).to match_array(%i[description link])
+          end
+        end
+      end
+    end
+
     it 'stripped all the strings' do
       output.each do |hash|
         hash.values.grep(String).all? do |str|
@@ -101,12 +112,186 @@ RSpec.describe HotelProcurer do
       end
     end
 
+    it 'standardized the images keys' do
+      output.each do |hash|
+        images = hash[:images]
+        images.each do |_key, value|
+          value.each do |img_hash|
+            expect(img_hash.keys).to match_array(%i[description link])
+          end
+        end
+      end
+    end
+
     it 'stripped all the strings' do
       output.each do |hash|
         hash.values.grep(String).all? do |str|
           expect(str).to eq(str.strip)
         end
       end
+    end
+  end
+
+  describe '__get_longest_string' do
+    it 'returns empty string if the first argument is nil' do
+      expect(described_class.new.send(:get_longest_string, nil, 'hello')).to eq('')
+    end
+
+    it 'returns first argument if the second argument is nil' do
+      expect(described_class.new.send(:get_longest_string, 'hello', nil)).to eq('hello')
+    end
+
+    it 'returns longest string out of the two arguments given' do
+      expect(described_class.new.send(:get_longest_string, 'hello', 'helloooo')).to eq('helloooo')
+      expect(described_class.new.send(:get_longest_string, 'helloooo', 'hello')).to eq('helloooo')
+    end
+
+    it 'returns the second argument if it has the same length with the first argument' do
+      expect(described_class.new.send(:get_longest_string, 'x', 'y')).to eq('y')
+      expect(described_class.new.send(:get_longest_string, 'y', 'x')).to eq('x')
+    end
+
+    it 'raises an error if any arguments are not nil and not string' do
+      expect { described_class.new.send(:get_longest_string, '', []) }.to raise_error(ArgumentError)
+      expect { described_class.new.send(:get_longest_string, 1, 'hello') }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe '__merge_hash' do
+    let(:amenity1) do
+      {
+        general: [
+          'outdoor pool',
+          'indoor pool',
+          'business center',
+          'childcare'
+        ],
+        room: ['tv', 'coffee machine', 'kettle', 'hair dryer', 'iron']
+      }
+    end
+    let(:amenity2) do
+      {
+        general: [
+          'outdoor pool',
+          'indoor pool',
+          'business center',
+          'gym'
+        ],
+        room: ['tv']
+      }
+    end
+
+    let(:images1) do
+      {
+        rooms: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/2.jpg',
+            description: 'Double room'
+          },
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/3.jpg',
+            description: 'Double room'
+          }
+        ],
+        site: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/1.jpg',
+            description: 'Front'
+          }
+        ]
+      }
+    end
+    let(:images2) do
+      {
+        rooms: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/2.jpg',
+            description: 'Double room'
+          },
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/4.jpg',
+            description: 'Bathroom'
+          }
+        ],
+        amenities: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/0.jpg',
+            description: 'RWS'
+          },
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/6.jpg',
+            description: 'Sentosa Gateway'
+          }
+        ]
+      }
+    end
+    let(:images_merged) do
+      {
+        rooms: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/2.jpg',
+            description: 'Double room'
+          },
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/3.jpg',
+            description: 'Double room'
+          },
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/4.jpg',
+            description: 'Bathroom'
+          }
+        ],
+        site: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/1.jpg',
+            description: 'Front'
+          }
+        ],
+        amenities: [
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/0.jpg',
+            description: 'RWS'
+          },
+          {
+            link: 'https://d2ey9sqrvkqdfs.cloudfront.net/0qZF/6.jpg',
+            description: 'Sentosa Gateway'
+          }
+        ]
+      }
+    end
+
+    it 'returns second argument if the first argument is nil' do
+      second_argument = { hello: 'world' }
+      expect(described_class.new.send(:merge_hash, nil, second_argument)).to eq(second_argument)
+    end
+
+    it 'raises an error if any arguments are not nil and not string' do
+      expect { described_class.new.send(:merge_hash, {}, '') }.to raise_error(ArgumentError)
+      expect { described_class.new.send(:merge_hash, 0, { hello: 'world' }) }.to raise_error(ArgumentError)
+    end
+
+    it 'any of the arguments are nil, returns the one that\'s not' do
+      hashed_argument = { hello: 'world' }
+      expect(described_class.new.send(:merge_hash, hashed_argument, nil)).to eq(hashed_argument)
+    end
+
+    it 'merges the amenities' do
+      result = {
+        general: [
+          'outdoor pool',
+          'indoor pool',
+          'business center',
+          'childcare',
+          'gym'
+        ],
+        room: ['tv', 'coffee machine', 'kettle', 'hair dryer', 'iron']
+      }
+
+      expect(described_class.new.send(:merge_hash, amenity1, amenity2)).to eq(result)
+    end
+
+    it 'merges the images' do
+      expect(described_class.new.send(:merge_hash, images1, images2)).to eq(images_merged)
     end
   end
 end

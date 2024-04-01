@@ -46,9 +46,9 @@ class HotelProcurer
     merge_present_values(existing_data, new_data, %i[lat lng])
     if new_data.key?(:amenities)
       existing_data[:amenities] =
-        combine_hash(existing_data[:amenities], new_data[:amenities])
+        merge_hash(existing_data[:amenities], new_data[:amenities])
     end
-    existing_data[:images] = combine_hash(existing_data[:images], new_data[:images]) if new_data.key?(:images)
+    existing_data[:images] = merge_hash(existing_data[:images], new_data[:images]) if new_data.key?(:images)
     existing_data[:booking_conditions] ||= []
     existing_data[:booking_conditions] += new_data[:booking_conditions] if new_data.key?(:booking_conditions)
     existing_data
@@ -163,14 +163,19 @@ class HotelProcurer
 
   # util methods
   def get_longest_string(old_str, new_str)
+    raise ArgumentError if (!old_str.nil? && !old_str.is_a?(String)) || (!new_str.nil? && !new_str.is_a?(String))
+
     return '' if old_str.nil?
     return old_str if new_str.nil?
 
-    old_str.size < new_str.size ? new_str : old_str
+    old_str.size <= new_str.size ? new_str : old_str
   end
 
-  def combine_hash(old_hash, new_hash)
+  def merge_hash(old_hash, new_hash)
+    raise ArgumentError if (!old_hash.nil? && !old_hash.is_a?(Hash)) || (!new_hash.nil? && !new_hash.is_a?(Hash))
+
     return new_hash if old_hash.nil?
+    return old_hash if new_hash.nil?
 
     old_hash&.deep_merge!(new_hash) do |_key, v1, v2|
       if v1.is_a?(Array) && v2.is_a?(Array)
