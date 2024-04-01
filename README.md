@@ -56,3 +56,4 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 
 #### Future improvements
 - Separate the processing strategy of each API supplier's endpoints into different classes that can share transformation methods
+- Create a background job tasks to rerun the data procurement process regularly
