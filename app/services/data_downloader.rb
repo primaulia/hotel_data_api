@@ -12,7 +12,7 @@ class DataDownloader
       setup_models(hotel_data)
     end
 
-    refresh_hotels_cache
+    refresh_hotels_cache if @hotels.present?
   end
 
   private
