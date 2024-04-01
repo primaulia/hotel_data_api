@@ -4,10 +4,10 @@
 
 This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650). To access the deliverable, you can access these links:
 
-- Return all hotels from three different suppliers
-- Return specific hotels by hotel's "id"
-- Return specific hotels by hotel's "destination_id"
-- Return specific hotels by hotel's "id" and "destination_id" combination
+- [Return all hotels from three different suppliers](https://strawberry-cupcake-14846-16923e053e31.herokuapp.com/api/hotels)
+- [Return specific hotels by hotel's "id"](https://strawberry-cupcake-14846-16923e053e31.herokuapp.com/api/hotels?hotels=SjyX,f8c9) (e.g. URL?hotels=<comma-separated-hotel-slugs>)
+- [Return specific hotels by hotel's "destination_id"](https://strawberry-cupcake-14846-16923e053e31.herokuapp.com/api/hotels?destinations=5432) (e.g. URL?destinations=<comma-separated-hotel-destination-ids>)
+- [Return specific hotels by hotel's "id" and "destination_id" combination](https://strawberry-cupcake-14846-16923e053e31.herokuapp.com/api/hotels?destinations=5432&hotels=SjyX)
 
 ### Local setup 
 
