@@ -32,7 +32,7 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 - There are three suppliers API endpoints to be called, but there are possibilities that some API endpoints will be omitted and/or new API endpoints to be introduced
 - It's assumed in this solution that "id" actually refers to the hotel "slug". The downloaded data will still have the auto-incrementing `id`.
 - It's possible for the same hotel to have different `destination_id`
-- It's assumed that once the data is no longer exist in the supplier's response payload, the existing data stored in the DB should be removed
+- It's assumed that once the data no longer exists in the supplier's response payload, the existing data stored in the DB should be removed
 
 #### V0 (Server setup and initial data cleanup)
 
@@ -50,13 +50,9 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 - Improve the readability of the code
 
 #### V2 Improvements
-- As there are possibilities that the data doesn't provide any coordinates for the map. Introduce `geocoder` gem to fill the empty value
+- As there are possibilities that the data doesn't provide any coordinates for the map. Introduce the `geocoder` gem to fill the empty value
 - Introduce a simple cache on the response endpoint
 - Setup a deployed server for testing purposes
 
 #### Future improvements
-- Separate the processing strategy of each API supplier's endpoints into a different class that can share transformation methods
-- 
-
-
-
+- Separate the processing strategy of each API supplier's endpoints into different classes that can share transformation methods
