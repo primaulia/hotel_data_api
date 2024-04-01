@@ -294,4 +294,42 @@ RSpec.describe HotelProcurer do
       expect(described_class.new.send(:merge_hash, images1, images2)).to eq(images_merged)
     end
   end
+
+  describe '__combine_data' do
+    it 'combined the data based on the endpoints given' do
+      acme_response_path = Rails.root.join('spec/fixtures/acme_response.json')
+      acme_response = File.read(acme_response_path)
+
+      cleaned_acme_path = Rails.root.join('spec/fixtures/cleaned_acme.json')
+      cleaned_acme = JSON.parse(File.read(cleaned_acme_path))
+      cleaned_acme.map!(&:deep_symbolize_keys)
+
+      patagonia_path = Rails.root.join('spec/fixtures/patagonia_response.json')
+      patagonia_response = File.read(patagonia_path)
+
+      cleaned_patagonia_path = Rails.root.join('spec/fixtures/cleaned_patagonia.json')
+      cleaned_patagonia = JSON.parse(File.read(cleaned_patagonia_path))
+      cleaned_patagonia.map!(&:deep_symbolize_keys)
+
+      stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/acme')
+        .to_return(status: 200, body: acme_response, headers: {})
+      stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/patagonia')
+        .to_return(status: 200, body: patagonia_response, headers: {})
+
+      instance = described_class.new
+      instance.send(:combine_data, 'acme')
+      expect(instance.data).to eq(cleaned_acme)
+
+      instance.send(:combine_data, 'patagonia')
+      expect(instance.data).to eq(cleaned_acme + cleaned_patagonia)
+    end
+
+    it 'calling an API that has no processor will raise an error' do
+      stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/foo')
+        .to_return(status: 404)
+
+      instance = described_class.new
+      expect { instance.send(:combine_data, 'foo') }.to raise_error(StandardError)
+    end
+  end
 end

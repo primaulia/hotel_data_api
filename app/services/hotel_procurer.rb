@@ -1,6 +1,9 @@
 require 'geocoder'
 
 class HotelProcurer
+  attr_reader :data
+  attr_accessor :endpoints
+
   def initialize
     @base_url = 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/'
     # when we need to add/remove a supplier, we can adjust this array
