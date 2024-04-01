@@ -295,41 +295,99 @@ RSpec.describe HotelProcurer do
     end
   end
 
-  describe '__combine_data' do
-    it 'combined the data based on the endpoints given' do
-      acme_response_path = Rails.root.join('spec/fixtures/acme_response.json')
-      acme_response = File.read(acme_response_path)
+  describe 'service flow' do
+    let(:acme_response_path) { Rails.root.join('spec/fixtures/acme_response.json') }
+    let(:acme_response) { File.read(acme_response_path) }
+    let(:cleaned_acme_path) { Rails.root.join('spec/fixtures/cleaned_acme.json') }
+    let(:cleaned_acme) { JSON.parse(File.read(cleaned_acme_path)).map!(&:deep_symbolize_keys) }
 
-      cleaned_acme_path = Rails.root.join('spec/fixtures/cleaned_acme.json')
-      cleaned_acme = JSON.parse(File.read(cleaned_acme_path))
-      cleaned_acme.map!(&:deep_symbolize_keys)
+    let(:patagonia_response_path) { Rails.root.join('spec/fixtures/patagonia_response.json') }
+    let(:patagonia_response) { File.read(patagonia_response_path) }
+    let(:cleaned_patagonia_path) { Rails.root.join('spec/fixtures/cleaned_patagonia.json') }
+    let(:cleaned_patagonia) { JSON.parse(File.read(cleaned_patagonia_path)).map!(&:deep_symbolize_keys) }
 
-      patagonia_path = Rails.root.join('spec/fixtures/patagonia_response.json')
-      patagonia_response = File.read(patagonia_path)
+    let(:paperflies_response_path) { Rails.root.join('spec/fixtures/paperflies_response.json') }
+    let(:paperflies_response) { File.read(paperflies_response_path) }
+    let(:cleaned_paperflies_path) { Rails.root.join('spec/fixtures/cleaned_paperflies.json') }
+    let(:cleaned_paperflies) { JSON.parse(File.read(cleaned_paperflies_path)).map!(&:deep_symbolize_keys) }
 
-      cleaned_patagonia_path = Rails.root.join('spec/fixtures/cleaned_patagonia.json')
-      cleaned_patagonia = JSON.parse(File.read(cleaned_patagonia_path))
-      cleaned_patagonia.map!(&:deep_symbolize_keys)
+    let(:final_data_path) { Rails.root.join('spec/fixtures/api_response.json') }
+    let(:final_data_body) { JSON.parse(File.read(final_data_path)).map(&:deep_symbolize_keys) }
 
+    let(:instance) { described_class.new }
+
+    before(:each) do
       stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/acme')
         .to_return(status: 200, body: acme_response, headers: {})
       stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/patagonia')
         .to_return(status: 200, body: patagonia_response, headers: {})
-
-      instance = described_class.new
-      instance.send(:combine_data, 'acme')
-      expect(instance.data).to eq(cleaned_acme)
-
-      instance.send(:combine_data, 'patagonia')
-      expect(instance.data).to eq(cleaned_acme + cleaned_patagonia)
+      stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/paperflies')
+        .to_return(status: 200, body: paperflies_response, headers: {})
+      Geocoder.configure(lookup: :test)
     end
 
-    it 'calling an API that has no processor will raise an error' do
-      stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/foo')
-        .to_return(status: 404)
+    describe '__combine_data' do
+      it 'combined the data based on the endpoints given' do
+        combined_data = instance.send(:combine_data, 'acme')
+        expect(combined_data).to eq(cleaned_acme)
 
-      instance = described_class.new
-      expect { instance.send(:combine_data, 'foo') }.to raise_error(StandardError)
+        combined_data += instance.send(:combine_data, 'patagonia')
+        expect(combined_data).to eq(cleaned_acme + cleaned_patagonia)
+      end
+
+      it 'calling an API that has no processor will raise an error' do
+        stub_request(:get, 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/foo')
+          .to_return(status: 404)
+
+        expect { instance.send(:combine_data, 'foo') }.to raise_error(StandardError)
+      end
+    end
+
+    describe '__deduplicate_data' do
+      it 'deduplicate the data that already exist from the previous processing operation' do
+        combined_data = instance.send(:combine_data, 'acme')
+        combined_data += instance.send(:combine_data, 'patagonia')
+        deduped_data = instance.send(:deduplicate_data, combined_data)
+        unique_keys = (cleaned_acme.pluck(:id) + cleaned_patagonia.pluck(:id)).uniq
+        expect(deduped_data.keys).to eq(unique_keys)
+      end
+    end
+
+    describe '__cleanup_data' do
+      it 'cleaned up different fields' do
+        Geocoder::Lookup::Test.add_stub(
+          'InterContinental Singapore Robertson Quay, SG',
+          [
+            { 'coordinates': [35.6927125, 139.69124935043257] }
+          ]
+        )
+        acme_data = instance.send(:combine_data, 'acme')
+        deduped_acme_data = instance.send(:deduplicate_data, acme_data)
+        data = instance.send(:cleanup_data, deduped_acme_data)
+        data.each do |hash|
+          expect(hash[:name]).to eq(deduped_acme_data[hash[:id]][:name].titleize)
+          expect(hash[:address]).to eq(deduped_acme_data[hash[:id]][:address].split(' ').map(&:capitalize).join(' '))
+          expect(hash[:city]).to eq(deduped_acme_data[hash[:id]][:city].capitalize)
+          expect(hash[:country]).to eq(deduped_acme_data[hash[:id]][:country].capitalize)
+          expect(hash[:lat]).not_to be_nil
+          expect(hash[:lng]).not_to be_nil
+        end
+      end
+    end
+
+    describe '#call' do
+      it 'procures data from three different suppliers' do
+        Geocoder::Lookup::Test.add_stub(
+          'InterContinental Singapore Robertson Quay, Singapore',
+          [
+            { 'coordinates': [35.6927125, 139.69124935043257] }
+          ]
+        )
+        expect(instance.call.size).to eq(final_data_body.size)
+        instance.call.each_with_index do |hash, index|
+          expect(hash.keys).to match_array(final_data_body[index].keys)
+        end
+      end
     end
   end
 end

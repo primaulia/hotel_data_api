@@ -17,11 +17,12 @@ class HotelProcurer
 
   def call
     @endpoints.each do |endpoint|
-      combine_data(endpoint) # combine all data based on the api responses
+      @data += combine_data(endpoint) # combine all data based on the api responses
     end
 
-    deduplicate_data
-    cleanup_data
+    @data = deduplicate_data(@data)
+    @data = cleanup_data(@data)
+    @data
   end
 
   private
@@ -29,14 +30,14 @@ class HotelProcurer
   def combine_data(endpoint)
     url = @base_url + endpoint
     response = JSON.parse(RestClient.get(url))
-    @data += send("process_#{endpoint}", response)
+    send("process_#{endpoint}", response)
   rescue StandardError
     raise StandardError, 'Invalid API endpoints provided!'
   end
 
-  def deduplicate_data
+  def deduplicate_data(data)
     merged_data = {}
-    @data.each do |hash|
+    data.each do |hash|
       key = hash[:id]
       existing_data = merged_data[key]
 
@@ -50,7 +51,7 @@ class HotelProcurer
       end
     end
 
-    @data = merged_data
+    merged_data
   end
 
   def merge_existing_data(existing_data, new_data, _key)
@@ -78,19 +79,19 @@ class HotelProcurer
     end
   end
 
-  def cleanup_data
-    @data.map do |key, value|
+  def cleanup_data(data)
+    data.map do |key, value|
       # remap the deduped data into the expected hash
       # geocode the coordinates if the data doesn't provide any coordinates
       {
         id: key,
         destination_id: value[:destination_id],
-        name: value[:name],
-        lat: value[:lat] || geocode_name("#{value[:name]} #{value[:country]}")&.first,
-        lng: value[:lng] || geocode_name("#{value[:name]} #{value[:country]}")&.second,
-        address: value[:address],
-        city: value[:city],
-        country: value[:country],
+        name: value[:name].titleize,
+        lat: value[:lat] || geocode_name("#{value[:name]}, #{value[:country]}")&.first,
+        lng: value[:lng] || geocode_name("#{value[:name]}, #{value[:country]}")&.second,
+        address: value[:address].split(' ').map(&:capitalize).join(' '),
+        city: value[:city].capitalize,
+        country: value[:country].capitalize,
         postal_code: value[:postal_code],
         description: value[:description],
         amenities: value[:amenities],

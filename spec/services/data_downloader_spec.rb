@@ -2,14 +2,13 @@ require 'rails_helper'
 
 RSpec.describe DataDownloader do
   describe 'Happy flow' do
-    before(:each) do
-      mock_response_path = Rails.root.join('spec/fixtures/api_response.json')
-      mock_response_body = JSON.parse(File.read(mock_response_path)).map(&:deep_symbolize_keys)
+    let(:mock_response_path) { Rails.root.join('spec/fixtures/api_response.json') }
+    let(:mock_response_body) { JSON.parse(File.read(mock_response_path)).map(&:deep_symbolize_keys) }
+    let(:data) { described_class.new.data.first }
 
+    before(:each) do
       allow_any_instance_of(HotelProcurer).to receive(:call).and_return(mock_response_body)
     end
-
-    let(:data) { described_class.new.data.first }
 
     describe '__create_destinations' do
       let(:destination) { create(:destination) }
