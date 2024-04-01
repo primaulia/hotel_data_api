@@ -11,9 +11,18 @@ class DataDownloader
     @data.each do |hotel_data|
       setup_models(hotel_data)
     end
+
+    refresh_hotels_cache
   end
 
   private
+
+  def refresh_hotels_cache
+    @hotels.each do |hotel|
+      cache_key = ['hotel', hotel]
+      Rails.cache.delete(cache_key)
+    end
+  end
 
   def setup_models(hotel_data)
     destination_id = hotel_data[:destination_id]
