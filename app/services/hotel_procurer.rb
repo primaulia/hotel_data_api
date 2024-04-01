@@ -23,12 +23,21 @@ class HotelProcurer
 
   private
 
+  def combine_data(endpoint)
+    url = @base_url + endpoint
+    response = JSON.parse(RestClient.get(url))
+    @data += send("process_#{endpoint}", response)
+  rescue StandardError
+    raise StandardError, 'Invalid API endpoints provided!'
+  end
+
   def deduplicate_data
     merged_data = {}
     @data.each do |hash|
       key = hash[:id]
       existing_data = merged_data[key]
 
+      # only dedupe the data if there's no matching id & destination_id combination
       if existing_data && existing_data[:destination_id] == hash[:destination_id]
         merge_existing_data(existing_data, hash, key)
       else
@@ -66,24 +75,16 @@ class HotelProcurer
     end
   end
 
-  def combine_data(endpoint)
-    url = @base_url + endpoint
-    response = JSON.parse(RestClient.get(url))
-    @data += send("process_#{endpoint}", response)
-  rescue StandardError
-    raise StandardError, 'Invalid API endpoints provided!'
-  end
-
   def cleanup_data
     @data.map do |key, value|
-      coordinates = geocode_name("#{value[:name]} #{value[:country]}")&.first&.coordinates # geocode the coordinates if
-
+      # remap the deduped data into the expected hash
+      # geocode the coordinates if the data doesn't provide any coordinates
       {
         id: key,
         destination_id: value[:destination_id],
         name: value[:name],
-        lat: value[:lat] || coordinates&.first,
-        lng: value[:lng] || coordinates&.second,
+        lat: value[:lat] || geocode_name("#{value[:name]} #{value[:country]}")&.first,
+        lng: value[:lng] || geocode_name("#{value[:name]} #{value[:country]}")&.second,
         address: value[:address],
         city: value[:city],
         country: value[:country],
@@ -187,6 +188,6 @@ class HotelProcurer
   end
 
   def geocode_name(location)
-    Geocoder.search(location)
+    Geocoder.search(location)&.first&.coordinates
   end
 end
