@@ -39,8 +39,10 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 - ~~Please see [this repo](https://github.com/primaulia/hotel-cleanup-api) for the procuring process~~ **This setup is dropped with reasons mentioned above**
 - ~~Setup GraphQL: Decided that it will make the API more flexible in the future~~ **This setup is dropped, to simplify the solutions**
 - Setup class diagram based on the API response example  
+
 ![Screenshot 2024-04-01 at 10 22 27 PM](https://github.com/primaulia/hotel_data_api/assets/1294303/48d882a3-46fb-4dbd-ab51-47eba41de7a6)
 - This is the intuition behind the current procuring system
+  
 ![Screenshot 2024-04-01 at 10 14 24 PM](https://github.com/primaulia/hotel_data_api/assets/1294303/4eca79c1-8f12-41d0-aff4-50deaccc8dd9)
 
 
