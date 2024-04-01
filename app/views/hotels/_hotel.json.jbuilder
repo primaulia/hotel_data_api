@@ -1,16 +1,10 @@
 json.cache! ['hotel', hotel], expires_in: 10.minutes do
   json.id hotel.slug
-  json.destination_id hotel.destination_id
-  json.name hotel.name
+  json.extract! hotel, :destination_id, :name, :description
   json.location do
-    json.lat hotel.lat
-    json.lng hotel.lng
-    json.address hotel.address
-    json.city hotel.city
-    json.country hotel.country
+    json.extract! hotel, :lat, :lng, :address, :city, :country
   end
   json.amenities hotel.amenities_list
   json.images hotel.images_list
-  json.description hotel.description
   json.booking_conditions hotel.booking_conditions.pluck(:condition)
 end
