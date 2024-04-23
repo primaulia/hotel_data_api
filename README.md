@@ -12,7 +12,7 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 ### Local setup 
 
 - run `rails db:setup`
-- run in `rails c` -> `DataDownloader.new.call`
+- run in `rails c` -> `HotelProcurer.new.call`
 - stop the console and start the rails server
 - Go to the links mentioned above with localhost as the base host
 
@@ -56,6 +56,11 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 - Introduce a simple cache on the response endpoint
 - Setup a deployed server for testing purposes
 
-#### Future improvements
-- Separate the processing strategy of each API supplier's endpoints into different classes that can share transformation methods
-- Create a background job tasks to rerun the data procurement process regularly
+#### V3 Refactor
+- Implement refactoring in the procurement process. So now the data from suppliers are all immediately stored in the DB
+- If the data has been stored in the DB, the code will check the difference so we also remove the intensive deduplication process
+- Also create a fallback processor in case we have yet to create a specific processor for a new supplier source
+- TODO: **the unit test hasn't been updated accordingly to this refactor**
+
+TODO Diagram Refactor
+- 
