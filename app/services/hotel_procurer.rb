@@ -154,7 +154,7 @@ class HotelProcurer
 
       hash[:address] = hash[:location][:address]
       hash[:country] = hash[:location][:country]
-      hash.delete(:location) # remove amenities value (unstructured data)
+      hash.delete(:location) # remove location value (destructured)
 
       # sync images value
       new_images = hash[:images].deep_transform_keys do |key|
