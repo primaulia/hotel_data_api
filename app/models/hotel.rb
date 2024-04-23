@@ -4,7 +4,7 @@ class Hotel < ApplicationRecord
   has_many :images, dependent: :destroy
   has_many :booking_conditions, dependent: :destroy
 
-  validates :name, :slug, :address, presence: true
+  validates :name, :slug, presence: true
   validates :slug, uniqueness: true
 
   def amenities_list
