@@ -32,7 +32,7 @@ module Procurer
     private
 
     # the most basic parser
-    # assumed that it has
+    # assumed that it has at least the basic string attributes
     def parse_data(hash)
       hash = super(hash)
       hash = hash.deep_symbolize_keys
