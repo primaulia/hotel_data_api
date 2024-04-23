@@ -35,11 +35,13 @@ RSpec.describe 'Hotels', type: :request do
     end
 
     it 'returns a correct json if filtered by destination' do
-      get '/api/hotels?destinations=1'
+      destination_ids = destinations.pluck(:id)
+      sampled_destination_id = destination_ids.sample
+      get "/api/hotels?destinations=#{sampled_destination_id}"
       parsed_body = JSON.parse(response.body)
-      expect(parsed_body.size).to eq(destinations.first.hotels.size)
+      expect(parsed_body.size).to eq(Destination.find(sampled_destination_id).hotels.size)
 
-      get '/api/hotels?destinations=1,2'
+      get "/api/hotels?destinations=#{destination_ids.join(",")}"
       parsed_body = JSON.parse(response.body)
       expect(parsed_body.size).to eq(hotels.size)
     end
@@ -52,7 +54,7 @@ RSpec.describe 'Hotels', type: :request do
       parsed_body = JSON.parse(response.body)
       expect(parsed_body.size).to eq(2)
 
-      get "/api/hotels?hotels=#{first_slug},#{last_slug}&destinations=1"
+      get "/api/hotels?hotels=#{first_slug},#{last_slug}&destinations=#{destinations.first.id}"
       parsed_body = JSON.parse(response.body)
       expect(parsed_body.size).to eq(1)
     end
