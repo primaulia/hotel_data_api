@@ -43,7 +43,7 @@ class HotelProcurer
 
       # only dedupe the data if there's no matching id & destination_id combination
       if existing_data && existing_data[:destination_id] == hash[:destination_id]
-        merge_existing_data(existing_data, hash, key)
+        merge_existing_data(existing_data, hash)
       else
         merged_data[key] =
           hash.slice(:destination_id, :name, :lat, :lng, :address, :city, :country, :postal_code, :description, :amenities,
@@ -54,7 +54,7 @@ class HotelProcurer
     merged_data
   end
 
-  def merge_existing_data(existing_data, new_data, _key)
+  def merge_existing_data(existing_data, new_data)
     merge_longest_strings(existing_data, new_data, %i[name address city country description])
     merge_present_values(existing_data, new_data, %i[lat lng])
     if new_data.key?(:amenities)
