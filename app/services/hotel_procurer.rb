@@ -10,13 +10,14 @@ class HotelProcurer
 
     # Supplier
       # @name: String,
+      # @endpoint: String
       # @active: Boolean
 
     # and eventually we're plucking on the names
-    @suppliers = %w[
-      acme
-      patagonia
-      paperflies
+    @suppliers = [
+      {name: 'acme', endpoint: 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/acme'},
+      {name: 'paperflies', endpoint: 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/paperflies'},
+      {name: 'patagonia', endpoint: 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/patagonia'},
     ]
   end
 

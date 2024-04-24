@@ -1,9 +1,8 @@
 module Procurer
   class Fallback < Procurer::Service
-    def initialize(name)
+    def initialize(endpoint)
       # assumed that the supplier will have the same base_url
-      url = "https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/#{name}"
-      @response = JSON.parse(RestClient.get(url))
+      @response = JSON.parse(RestClient.get(endpoint))
     rescue RestClient::ExceptionWithResponse => err
       raise StandardError, "Invalid API endpoints provided"
     end

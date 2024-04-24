@@ -1,21 +1,20 @@
 module Procurer
   class Service
-    def initialize(name)
-      @name = name
+    def initialize(supplier)
+      @name = supplier[:name]
+      @endpoint = supplier[:endpoint]
     end
 
     # delegate the call the subclass
     delegate :call, to: :instance_klass
 
     def instance_klass
-      debugger
       klass = "Procurer::#{@name.capitalize}".constantize
-      klass.new
+      klass.new(@endpoint)
     rescue NameError
-      debugger
       # if somehow we haven't created the processor
       # we fall back the processor to the most generic processor
-      Procurer::Fallback.new(@name)
+      Procurer::Fallback.new(supplier[:endpoint])
     end
 
     private

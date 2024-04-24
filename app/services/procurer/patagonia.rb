@@ -1,7 +1,6 @@
 module Procurer
   class Patagonia < Procurer::Service
-    def initialize
-      url = 'https://5f2be0b4ffc88500167b85a0.mockapi.io/suppliers/patagonia'
+    def initialize(url)
       @response = JSON.parse(RestClient.get(url))
     end
 
