@@ -62,5 +62,4 @@ This is an attempt to [this coding challenge](https://kitt.lewagon.com/db/123650
 - Also create a fallback processor in case we have yet to create a specific processor for a new supplier source
 - TODO: **the unit test hasn't been updated accordingly to this refactor**
 
-TODO Diagram Refactor
-- 
+![Screenshot 2024-04-23 at 11 34 23 PM](https://github.com/primaulia/hotel_data_api/assets/1294303/8cdee3dd-60c5-43e5-ac02-5a1c6490f78f)
