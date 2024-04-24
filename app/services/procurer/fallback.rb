@@ -1,7 +1,6 @@
 module Procurer
   class Fallback < Procurer::Service
     def initialize(endpoint)
-      # assumed that the supplier will have the same base_url
       @response = JSON.parse(RestClient.get(endpoint))
     rescue RestClient::ExceptionWithResponse => err
       raise StandardError, "Invalid API endpoints provided"
