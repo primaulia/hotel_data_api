@@ -20,11 +20,12 @@ module Procurer
         hotel.lng = hotel_data[:lng] if hotel_data[:lat].present?
 
         hotel = store_string_attributes(hotel, hotel_data)
+
+        hotel.save!
+
         store_images(hotel, hotel_data)
         store_amenities(hotel, hotel_data)
         store_booking_conditions(hotel, hotel_data)
-
-        hotel.save!
       end
     end
 

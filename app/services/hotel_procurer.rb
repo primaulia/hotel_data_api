@@ -23,7 +23,7 @@ class HotelProcurer
 
   def call
     @suppliers.map do |supplier|
-      procure_data(supplier)
+      Procurer::Service.new(supplier).call
     end
 
     fill_lat_lng
@@ -40,10 +40,6 @@ class HotelProcurer
         lng: geocode_name("#{hotel.name}, #{hotel.country}")&.first
       )
     end
-  end
-
-  def procure_data(supplier)
-    Procurer::Service.new(supplier).call
   end
 
   def refresh_hotels_cache

@@ -22,6 +22,8 @@ module Procurer
         hotel = store_string_attributes(hotel, hotel_data)
 
         hotel.save!
+
+        store_amenities(hotel, hotel_data)
       end
     end
 
@@ -32,6 +34,19 @@ module Procurer
       hash = super(hash)
       hash = hash.transform_keys('latitude' => :lat, 'longitude' => :lng)
              .deep_symbolize_keys
+
+
+      # sync amenities value
+      hash[:amenities] = hash.dig(:facilities) ? {
+        general: hash[:facilities].map do |amenity|
+          stripped_amenity = amenity.strip
+          if stripped_amenity == "WiFi"
+            stripped_amenity.downcase
+          else
+            stripped_amenity.underscore.humanize(capitalize: false)
+          end
+        end
+      } : []
 
       hash.delete(:facilities) # remove facilities value (unstructured data)
       hash.delete(:postal_code)

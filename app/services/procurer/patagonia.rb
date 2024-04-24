@@ -20,9 +20,10 @@ module Procurer
         hotel.lng = hotel_data[:lng] if hotel_data[:lat].present?
 
         hotel = store_string_attributes(hotel, hotel_data)
-        store_images(hotel, hotel_data)
-
         hotel.save!
+
+        store_amenities(hotel, hotel_data)
+        store_images(hotel, hotel_data)
       end
     end
 
@@ -33,12 +34,17 @@ module Procurer
       hash = hash.transform_keys('destination' => :destination_id, 'info' => :description)
              .deep_symbolize_keys
 
-      hash.delete(:amenities) # remove amenities value (unstructured data)
-
       # sync images value
       new_images = hash[:images].deep_transform_keys do |key|
         key == :url ? :link : key
       end
+
+      # sync amenities value
+      hash[:amenities] = hash.dig(:amenities) ? {
+        room: hash[:amenities].map do |amenity|
+          amenity.strip.downcase
+        end
+      } : []
 
       hash[:images] = new_images
       hash
