@@ -14,7 +14,7 @@ module Procurer
     rescue NameError
       # if somehow we haven't created the processor
       # we fall back the processor to the most generic processor
-      Procurer::Fallback.new(supplier[:endpoint])
+      Procurer::Fallback.new(@endpoint)
     end
 
     private
